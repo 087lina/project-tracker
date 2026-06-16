@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Tracker - Modern Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: rgba(226, 232, 240, 0.8);
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            
+            /* Status Colors */
+            --bg-completed: #dcfce7;
+            --text-completed: #15803d;
+            --bg-in-progress: #fef9c3;
+            --text-in-progress: #a16207;
+            --bg-not-started: #f1f5f9;
+            --text-not-started: #475569;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: var(--bg-gradient); 
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 40px 20px; 
+            display: flex;
+            justify-content: center;
+        }
+
+        .dashboard { 
+            width: 100%;
+            max-width: 1100px; 
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Header Styling */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h2 { 
+            font-size: 1.75rem; 
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Stats Row */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-card .label { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+        .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+
+        /* Main Container */
+        .table-container { 
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px; 
+            overflow: hidden; 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); 
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        
+        th, td { padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
+        
+        th { 
+            background-color: rgba(248, 250, 252, 0.7); 
+            color: var(--text-muted); 
+            font-weight: 600; 
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: rgba(248, 250, 252, 0.4); }
+
+        .proj-id {
+            font-family: monospace;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        /* Modern Badges */
+        .badge { 
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px; 
+            border-radius: 9999px; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            text-transform: capitalize;
+        }
+        
+        .status-in-progress { background: var(--bg-in-progress); color: var(--text-in-progress); }
+        .status-completed { background: var(--bg-completed); color: var(--text-completed); }
+        .status-not-started { background: var(--bg-not-started); color: var(--text-not-started); }
+
+        /* Progress Bar Styling with Smooth Transition */
+        .progress-container { display: flex; align-items: center; gap: 12px; }
+        
+        .progress-bar { 
+            background: #e2e8f0; 
+            border-radius: 9999px; 
+            width: 120px; 
+            height: 6px; 
+            overflow: hidden;
+        }
+        
+        .progress-fill { 
+            background: linear-gradient(90deg, #6366f1, #4f46e5); 
+            height: 100%; 
+            border-radius: 9999px; 
+            width: 0%; /* Start at 0% for the animation to kick in */
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); /* Premium ease-in-out curve */
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-main);
+            min-width: 40px;
+        }
+
+        /* Loading & Empty states styling */
+        .status-msg { text-align: center; color: var(--text-muted); padding: 40px !important; font-weight: 500;}
+        .error-msg { color: #ef4444; }
+
+        @media (max-width: 768px) {
+            th, td { padding: 12px 14px; font-size: 0.9rem; }
+            .progress-bar { width: 80px; }
+            body { padding: 20px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <div class="header-section">
+        <h2>Project Management Hub</h2>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="label">Total Projects</span>
+            <span class="value" id="stat-total">-</span>
+        </div>
+        <div class="stat-card">
+            <span class="label">Completed</span>
+            <span class="value" id="stat-completed" style="color: var(--text-completed);">-</span>
+        </div>
+        <div class="stat-card">
+            <span class="label">In Progress</span>
+            <span class="value" id="stat-progress" style="color: var(--text-in-progress);">-</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Project Name</th>
+                    <th>Active Task</th>
+                    <th>Developer</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <tr>
+                    <td colspan="6" class="status-msg">Syncing live dashboard parameters...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_URL = "https://sheetdb.io/api/v1/fauqnzm2mjqd2";
+
+    async function loadProjects() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Network response failure.');
+            
+            const projects = await response.json();
+            
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = ''; // Wipe loader 
+
+            // Counter Variables for Dashboard Metrics
+            let completedCount = 0;
+            let activeCount = 0;
+            const targetWidths = [];
+
+            projects.forEach((project, index) => {
+                const safeStatus = project.Status ? project.Status.trim() : 'Not Started';
+                const statusClass = 'status-' + safeStatus.toLowerCase().replace(/\s+/g, '-');
+                
+                if(safeStatus.toLowerCase() === 'completed') completedCount++;
+                if(safeStatus.toLowerCase() === 'in progress') activeCount++;
+
+                const progressDecimal = parseFloat(project.Progress) || 0;
+                const calculatedPercent = progressDecimal <= 1 ? Math.round(progressDecimal * 100) : Math.round(progressDecimal);
+                const progressPercent = calculatedPercent + '%';
+
+                // Save the intended width to animate later
+                targetWidths.push({ id: `fill-${index}`, width: progressPercent });
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="proj-id">${project.ProjectID || 'N/A'}</span></td>
+                    <td style="font-weight: 600; color: var(--text-main);">${project.ProjectName || 'Unnamed Project'}</td>
+                    <td style="color: var(--text-muted); font-size: 0.95rem;">${project.Task || 'None'}</td>
+                    <td style="font-weight: 500;">${project.Developer || 'Unassigned'}</td>
+                    <td><span class="badge ${statusClass}">${safeStatus}</span></td>
+                    <td>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="fill-${index}"></div>
+                            </div>
+                            <span class="progress-text">${progressPercent}</span>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Populate metrics summary elements
+            document.getElementById('stat-total').innerText = projects.length;
+            document.getElementById('stat-completed').innerText = completedCount;
+            document.getElementById('stat-progress').innerText = activeCount;
+
+            // Trigger the smooth fill transition right after DOM paint
+            setTimeout(() => {
+                targetWidths.forEach(item => {
+                    const el = document.getElementById(item.id);
+                    if (el) el.style.width = item.width;
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error("API Error: ", error);
+            document.getElementById('table-body').innerHTML = `
+                <tr>
+                    <td colspan="6" class="status-msg error-msg">
+                        ⚠️ Failed to connect to secure Google Sheets API ecosystem.
+                    </td>
+                </tr>`;
+        }
+    }
+
+    // Fire Initializer Engine
+    loadProjects();
+</script>
+</body>
+</html>
